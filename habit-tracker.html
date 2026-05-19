@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Habits">
+<title>Habit Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f4f0;color:#1a1a18;min-height:100vh;padding-bottom:40px}
+.header{background:#fff;border-bottom:0.5px solid rgba(0,0,0,0.1);padding:16px 20px 12px;position:sticky;top:0;z-index:10}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.date-nav{display:flex;align-items:center;gap:8px}
+.date-nav button{background:none;border:0.5px solid rgba(0,0,0,0.15);border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;color:#1a1a18}
+.date-nav button:active{background:#f0efe9}
+.day-title{font-size:15px;font-weight:500}
+.day-sub{font-size:12px;color:#888;margin-top:1px}
+.streak-pill{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;padding:5px 10px;background:#FAEEDA;color:#633806;border-radius:99px;border:0.5px solid #EF9F27}
+.xp-section{display:flex;align-items:center;gap:10px}
+.xp-label{font-size:11px;color:#888;white-space:nowrap}
+.xp-bar{flex:1;height:6px;background:#f0efe9;border-radius:99px;overflow:hidden}
+.xp-fill{height:100%;background:#7F77DD;border-radius:99px;transition:width 0.4s}
+.xp-val{font-size:11px;color:#534AB7;font-weight:500;white-space:nowrap}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px}
+.stat{background:#fff;border-radius:10px;padding:10px 8px;text-align:center;border:0.5px solid rgba(0,0,0,0.08)}
+.stat-val{font-size:18px;font-weight:500}
+.stat-lbl{font-size:10px;color:#888;margin-top:2px}
+.msg-box{margin:0 16px 12px;background:#EEEDFE;border-radius:10px;padding:10px 14px;font-size:13px;color:#3C3489}
+.phase-section{margin:0 16px 16px}
+.phase-label{font-size:11px;font-weight:500;padding:3px 10px;border-radius:99px;display:inline-flex;align-items:center;gap:4px;margin-bottom:8px}
+.habit-row{display:flex;align-items:center;gap:10px;background:#fff;border:0.5px solid rgba(0,0,0,0.08);border-radius:12px;padding:10px 12px;margin-bottom:8px;transition:background 0.15s,border-color 0.15s}
+.habit-row.done{border-color:#1D9E75;background:#E1F5EE}
+.habit-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.habit-info{flex:1;min-width:0}
+.habit-name{font-size:14px;font-weight:500}
+.habit-sub{font-size:11px;color:#888;margin-top:2px}
+.habit-meta{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
+.time-tag{font-size:10px;font-weight:500;padding:1px 7px;border-radius:99px}
+.week-row{display:flex;gap:4px;margin-top:5px}
+.week-dot{width:8px;height:8px;border-radius:50%;background:#f0efe9;border:0.5px solid rgba(0,0,0,0.1)}
+.week-dot.done{background:#1D9E75;border-color:#1D9E75}
+.week-dot.today{border:1.5px solid #7F77DD}
+.habit-xp{font-size:11px;font-weight:500;color:#534AB7;flex-shrink:0}
+.check-btn{width:32px;height:32px;border-radius:50%;border:1.5px solid rgba(0,0,0,0.15);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;transition:background 0.15s,border-color 0.15s}
+.check-btn.done{background:#1D9E75;border-color:#1D9E75;color:#fff}
+.check-btn:not(.done){color:transparent}
+.install-hint{margin:0 16px;background:#fff;border:0.5px solid rgba(0,0,0,0.08);border-radius:10px;padding:12px 14px;font-size:12px;color:#888;text-align:center;line-height:1.6}
+.install-hint strong{color:#1a1a18}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="date-nav">
+        <button onclick="shiftDay(-1)">&#8249;</button>
+        <div>
+          <div class="day-title" id="day-title">Heute</div>
+          <div class="day-sub" id="day-sub"></div>
+        </div>
+        <button onclick="shiftDay(1)">&#8250;</button>
+      </div>
+    </div>
+    <div class="streak-pill">&#128293; <span id="streak-count">0</span> Tage</div>
+  </div>
+  <div class="xp-section">
+    <span class="xp-label">Level <span id="level-num">1</span></span>
+    <div class="xp-bar"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+    <span class="xp-val" id="xp-val">0 / 100 XP</span>
+  </div>
+</div>
+
+<div class="stats-row">
+  <div class="stat"><div class="stat-val" id="done-today">0/8</div><div class="stat-lbl">Heute</div></div>
+  <div class="stat"><div class="stat-val" id="total-xp">0</div><div class="stat-lbl">Gesamt-XP</div></div>
+  <div class="stat"><div class="stat-val" id="best-streak">0</div><div class="stat-lbl">Bester Streak</div></div>
+</div>
+
+<div class="msg-box" id="msg-box">Leg los — erster Haken des Tages!</div>
+
+<div id="habits-container"></div>
+
+<div class="install-hint" id="install-hint">
+  <strong>Als App speichern:</strong><br>
+  Safari: Teilen-Symbol &#8594; „Zum Home-Bildschirm"<br>
+  Android Chrome: Menü &#8594; „Zum Startbildschirm hinzufügen"
+</div>
+
+<script>
+const PHASES=[
+  {id:'morgen',label:'Vor der Arbeit · 4:45',bg:'#FAEEDA',tc:'#633806',habits:[
+    {id:'water-m',name:'Großes Glas Wasser',sub:'Direkt nach dem Aufstehen',icon:'💧',ibg:'#E6F1FB',xp:10,tip:'4:45'},
+    {id:'nophone-m',name:'Kein Handy erste 10 Min.',sub:'Ruhiger Start in den Tag',icon:'🧠',ibg:'#EEEDFE',xp:10,tip:'4:45'},
+  ]},
+  {id:'pendeln',label:'Pendelzeit hin · 5–6 Uhr',bg:'#E6F1FB',tc:'#0C447C',habits:[
+    {id:'podcast',name:'Podcast / Hörbuch',sub:'Lernzeit im Bus oder Auto',icon:'🎧',ibg:'#EEEDFE',xp:15,tip:'5:00–6:00'},
+    {id:'breathe',name:'5 Min. Atemübung',sub:'Box-Breathing vor der Schicht',icon:'🫁',ibg:'#FAECE7',xp:10,tip:'Im Zug'},
+  ]},
+  {id:'arbeit',label:'Arbeit · 6–14 Uhr',bg:'#EEEDFE',tc:'#3C3489',habits:[
+    {id:'water-w',name:'1,5 L Wasser trinken',sub:'Schicht + Bewegung = mehr Bedarf',icon:'💧',ibg:'#E6F1FB',xp:10,tip:'6–14 Uhr'},
+    {id:'pause',name:'Pause wirklich nutzen',sub:'5–10 Min. aufstehen / raus',icon:'🚶',ibg:'#E1F5EE',xp:10,tip:'Pause'},
+  ]},
+  {id:'nachmittag',label:'Freizeit · ab 15 Uhr',bg:'#E1F5EE',tc:'#085041',habits:[
+    {id:'move',name:'Sofort raus nach Heimkommen',sub:'25 Min. — Handy in anderen Raum',icon:'⚡',ibg:'#E1F5EE',xp:20,tip:'15:00'},
+    {id:'learn',name:'1 Lernblock (20–30 Min.)',sub:'Laut erklären, kein Handy',icon:'📖',ibg:'#EEEDFE',xp:20,tip:'Nach Spaziergang'},
+    {id:'journal',name:'3 Dinge aufschreiben',sub:'Was war gut heute?',icon:'✏️',ibg:'#FBEAF0',xp:10,tip:'Abends'},
+    {id:'sleep',name:'Vor 22 Uhr schlafen',sub:'7 h für 4:45-Wecker',icon:'🌙',ibg:'#EEEDFE',xp:15,tip:'22:00'},
+  ]},
+];
+
+const ALL=PHASES.flatMap(p=>p.habits);
+const MSGS={
+  0:['Los geht\'s!'],1:['Erster Haken — gut!'],2:['2 Habits — du bist im Flow!'],
+  3:['Drei! Stark.'],4:['Halbzeit. Weiter!'],5:['Fünf — richtig on fire.'],
+  6:['Nur noch zwei!'],7:['Vorletzter — nicht stoppen!'],
+  8:['PERFEKTER TAG! Alle Habits ✓'],
+};
+
+let offset=0;
+function dk(o){const d=new Date();d.setDate(d.getDate()+o);return d.toISOString().slice(0,10);}
+function dlabel(o){
+  const d=new Date();d.setDate(d.getDate()+o);
+  const wd=d.toLocaleDateString('de-DE',{weekday:'long'});
+  const dt=d.toLocaleDateString('de-DE',{day:'numeric',month:'long'});
+  return[o===0?'Heute':o===-1?'Gestern':wd, dt];
+}
+function load(){try{return JSON.parse(localStorage.getItem('hbt3')||'{}');}catch{return{};}}
+function save(s){try{localStorage.setItem('hbt3',JSON.stringify(s));}catch{}}
+let S=load();
+
+function done(dateKey,id){return(S[dateKey]||[]).includes(id);}
+function toggle(dateKey,id){
+  if(!S[dateKey])S[dateKey]=[];
+  const i=S[dateKey].indexOf(id);
+  if(i>=0)S[dateKey].splice(i,1);else S[dateKey].push(id);
+  save(S);render();
+}
+function totalXP(){
+  let x=0;
+  Object.keys(S).forEach(k=>(S[k]||[]).forEach(id=>{const h=ALL.find(h=>h.id===id);if(h)x+=h.xp;}));
+  return x;
+}
+function streak(){
+  let s=0,d=new Date();
+  for(let i=0;i<500;i++){
+    const k=d.toISOString().slice(0,10);
+    if((S[k]||[]).length>0)s++;
+    else if(k!==dk(0))break;
+    d.setDate(d.getDate()-1);
+  }return s;
+}
+function bestStreak(){
+  const keys=Object.keys(S).filter(k=>(S[k]||[]).length>0).sort();
+  if(!keys.length)return 0;
+  let best=1,cur=1;
+  for(let i=1;i<keys.length;i++){
+    const diff=(new Date(keys[i])-new Date(keys[i-1]))/86400000;
+    cur=diff===1?cur+1:1;if(cur>best)best=cur;
+  }return best;
+}
+function level(xp){
+  const t=[100,250,500,900,1500,2500,4000];
+  for(let i=0;i<t.length;i++)if(xp<t[i])return{lv:i+1,cur:i>0?xp-t[i-1]:xp,max:t[i]-(i>0?t[i-1]:0)};
+  return{lv:8,cur:xp-4000,max:6000};
+}
+function last7(id){
+  return Array.from({length:7},(_,i)=>{
+    const d=new Date();d.setDate(d.getDate()-6+i);
+    const k=d.toISOString().slice(0,10);
+    return{today:i===6,done:(S[k]||[]).includes(id)};
+  });
+}
+
+function render(){
+  const key=dk(offset);
+  const[title,sub]=dlabel(offset);
+  document.getElementById('day-title').textContent=title;
+  document.getElementById('day-sub').textContent=sub;
+  const dc=(S[key]||[]).length;
+  document.getElementById('done-today').textContent=dc+'/'+ALL.length;
+  const xp=totalXP();
+  document.getElementById('total-xp').textContent=xp;
+  document.getElementById('streak-count').textContent=streak();
+  document.getElementById('best-streak').textContent=bestStreak();
+  const lv=level(xp);
+  document.getElementById('level-num').textContent=lv.lv;
+  document.getElementById('xp-val').textContent=lv.cur+' / '+lv.max+' XP';
+  document.getElementById('xp-fill').style.width=Math.min(100,Math.round(lv.cur/lv.max*100))+'%';
+  const m=MSGS[Math.min(dc,8)];
+  document.getElementById('msg-box').textContent=m[Math.floor(Math.random()*m.length)];
+
+  const c=document.getElementById('habits-container');
+  c.innerHTML='';
+  PHASES.forEach(ph=>{
+    const sec=document.createElement('div');
+    sec.className='phase-section';
+    const lbl=document.createElement('div');
+    lbl.className='phase-label';
+    lbl.style.background=ph.bg;lbl.style.color=ph.tc;
+    lbl.textContent=ph.label;
+    sec.appendChild(lbl);
+    ph.habits.forEach(h=>{
+      const d=done(key,h.id);
+      const l7=last7(h.id);
+      const row=document.createElement('div');
+      row.className='habit-row'+(d?' done':'');
+      row.innerHTML=`
+        <div class="habit-icon" style="background:${h.ibg}">${h.icon}</div>
+        <div class="habit-info">
+          <div class="habit-name">${h.name}</div>
+          <div class="habit-sub">${h.sub}</div>
+          <div class="habit-meta">
+            <span class="time-tag" style="background:${ph.bg};color:${ph.tc}">${h.tip}</span>
+          </div>
+          <div class="week-row">
+            ${l7.map(x=>`<div class="week-dot${x.done?' done':''}${x.today?' today':''}"></div>`).join('')}
+          </div>
+        </div>
+        <div class="habit-xp">+${h.xp}XP</div>
+        <button class="check-btn${d?' done':''}" onclick="toggle('${key}','${h.id}')" aria-label="${h.name}">&#10003;</button>`;
+      sec.appendChild(row);
+    });
+    c.appendChild(sec);
+  });
+}
+
+function shiftDay(d){offset=Math.min(0,offset+d);render();}
+render();
+</script>
+</body>
+</html>
